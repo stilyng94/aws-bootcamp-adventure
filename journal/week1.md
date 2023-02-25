@@ -12,7 +12,7 @@ Docker for VSCode makes it easy to work with Docker
 
 https://code.visualstudio.com/docs/containers/overview
 
-> Gitpod is preinstalled with theis extension
+> Gitpod is preinstalled with this extension
 
 ## Containerize Backend
 
@@ -56,31 +56,29 @@ CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=4567"]
 ### Build Container
 
 ```sh
-docker build -t  backend-flask ./backend-flask
+docker build -t  escobar0216/cruddur-backend ./backend-flask
 ```
 
 ### Run Container
 
 Run 
 ```sh
-docker run --rm -p 4567:4567 -it backend-flask
-FRONTEND_URL="*" BACKEND_URL="*" docker run --rm -p 4567:4567 -it backend-flask
 export FRONTEND_URL="*"
 export BACKEND_URL="*"
-docker run --rm -p 4567:4567 -it  -e FRONTEND_URL -e BACKEND_URL backend-flask
+docker run --rm --name backend -p 4567:4567 -it  -e FRONTEND_URL -e BACKEND_URL escobar0216/cruddur-backend
+docker stop backend
 unset FRONTEND_URL
 unset BACKEND_URL
-docker run --rm -p 4567:4567 -it -e FRONTEND_URL='*' -e BACKEND_URL='*' backend-flask
 ```
 
 Run in background
 ```sh
-docker container run --rm -p 4567:4567 -d backend-flask
+docker container run --rm -p 4567:4567 -d escobar0216/cruddur-backend
 ```
 
 Return the container id into an Env Vat
 ```sh
-CONTAINER_ID=$(docker run --rm -p 4567:4567 -d backend-flask)
+CONTAINER_ID=$(docker run --rm -p 4567:4567 -d escobar0216/cruddur-backend)
 ```
 
 > docker container run is idiomatic, docker run is legacy syntax but is commonly used.
@@ -103,7 +101,7 @@ curl -X GET http://localhost:4567/api/activities/home -H "Accept: application/js
 
 ```sh
 docker logs CONTAINER_ID -f
-docker logs backend-flask -f
+docker logs CONTAINER_NAME -f
 docker logs $CONTAINER_ID -f
 ```
 
@@ -124,23 +122,31 @@ docker run --rm -it busybosy
 ```sh
 docker exec CONTAINER_ID -it /bin/bash
 ```
+### Stop a Container
+
+Run 
+```sh
+docker stop CONTAINER_ID
+unset FRONTEND_URL
+unset BACKEND_URL
+```
 
 > You can just right click a container and see logs in VSCode with Docker extension
 
 ### Delete an Image
 
 ```sh
-docker image rm backend-flask --force
+docker image rm escobar0216/cruddur-backend --force
 ```
 
-> docker rmi backend-flask is the legacy syntax, you might see this is old docker tutorials and articles.
+> docker rmi escobar0216/cruddur-backend is the legacy syntax, you might see this is old docker tutorials and articles.
 
 > There are some cases where you need to use the --force
 
 ### Overriding Ports
 
 ```sh
-FLASK_ENV=production PORT=8080 docker run -p 4567:4567 -it backend-flask
+FLASK_ENV=production PORT=8080 docker run -p 4567:4567 -it escobar0216/cruddur-backend
 ```
 
 > Look at Dockerfile to see how ${PORT} is interpolated
@@ -175,13 +181,13 @@ CMD ["npm", "start"]
 ### Build Container
 
 ```sh
-docker build -t frontend-react-js ./frontend-react-js
+docker build -t escobar0216/cruddur-frontend ./frontend-react-js
 ```
 
 ### Run Container
 
 ```sh
-docker run -p 3000:3000 -d frontend-react-js
+docker run -p 3000:3000 -d escobar0216/cruddur-frontend
 ```
 
 ## Multiple Containers
@@ -197,19 +203,32 @@ services:
     environment:
       FRONTEND_URL: "https://3000-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
       BACKEND_URL: "https://4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
-    build: ./backend-flask
+    build:
+      context: ./backend-flask
+      dockerfile: Dockerfile
+    image: escobar0216/cruddur-backend
+    container_name: backend
     ports:
       - "4567:4567"
     volumes:
       - ./backend-flask:/backend-flask
+    networks:
+      - cruddur
+
   frontend-react-js:
     environment:
       REACT_APP_BACKEND_URL: "https://4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
-    build: ./frontend-react-js
+    build:
+      context: ./frontend-react-js
+      dockerfile: Dockerfile
+    image: escobar0216/cruddur-frontend
     ports:
       - "3000:3000"
     volumes:
       - ./frontend-react-js:/frontend-react-js
+    container_name: frontend
+    networks:
+      - cruddur
 
 # the name flag is a hack to change the default prepend folder
 # name when outputting the image names
@@ -218,6 +237,17 @@ networks:
     driver: bridge
     name: cruddur
 ```
+## Run Specific containers in Docker Compose
+```sh
+docker compose up -d SERVICE_NAME
+```
+
+## Run only frontend and backend
+```sh
+docker compose up -d frontend-react-js backend-flask
+```
+
+
 
 ## Adding DynamoDB Local and Postgres
 
@@ -240,6 +270,10 @@ services:
       - '5432:5432'
     volumes: 
       - db:/var/lib/postgresql/data
+    container_name: db
+    networks:
+      - cruddur
+
 volumes:
   db:
     driver: local
@@ -272,6 +306,8 @@ services:
     volumes:
       - "./docker/dynamodb:/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
+    networks:
+      - cruddur
 ```
 
 Example of using DynamoDB local

@@ -14,8 +14,14 @@ services:
       - "4567:4567"
     volumes:
       - ./backend-flask:/backend-flask
-    networks:
-      - cruddur
+    restart: unless-stopped
+    healthcheck:
+      test: curl --fail http://localhost:4567/api/activities/home || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 
   frontend-react-js:
     environment:
@@ -27,10 +33,16 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend-react-js:/frontend-react-js
+      - ./frontend-react-js/src:/frontend-react-js/src
     container_name: frontend
-    networks:
-      - cruddur
+    restart: unless-stopped
+    healthcheck:
+      test: curl --fail http://localhost:3000 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 
   db:
     image: postgres:13-alpine
@@ -43,8 +55,7 @@ services:
     volumes: 
       - db:/var/lib/postgresql/data
     container_name: db
-    networks:
-      - cruddur
+
 
   dynamodb-local:
     # https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
@@ -58,8 +69,7 @@ services:
     volumes:
       - "./docker/dynamodb:/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
-    networks:
-      - cruddur
+
 
 networks: 
   internal-network:

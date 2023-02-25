@@ -31,6 +31,23 @@ cd ..
 - append to the url to `/api/activities/home`
 - you should get back json
 
+## Best Practices
+`https://medium.com/@nodepractices/docker-best-practices-with-node-js-e044b78d8f67`
+
+## Use .dockerignore to prevent leaking secrets
+```.dockerignore
+**/node_modules/
+**/.git
+**/README.md
+**/LICENSE
+**/.vscode
+**/npm-debug.log
+**/coverage
+**/.env
+**/.editorconfig
+**/.aws
+**/dist
+```
 
 
 ### Add Dockerfile

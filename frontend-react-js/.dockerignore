@@ -54,8 +54,6 @@ Dockerfile.*
 .dockerignore
 .DS_Store
 
-public/
-
 runtime/
 
 ### VisualStudioCode ###

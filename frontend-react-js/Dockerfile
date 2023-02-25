@@ -12,7 +12,7 @@ COPY . /frontend-react-js
 
 WORKDIR /frontend-react-js
 
-RUN npm install && npm clean cache --force
+RUN npm install
 
 RUN chown -R node /frontend-react-js
 
